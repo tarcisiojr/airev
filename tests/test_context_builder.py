@@ -1,7 +1,5 @@
 """Testes para o context_builder."""
 
-import pytest
-
 from code_reviewer.context_builder import (
     _is_comment_line,
     find_callees,
@@ -40,10 +38,6 @@ class TestFindCallees:
             "log_error(message)",
         ]
         callees = find_callees(lines, workdir=None)
-
-        # Não vai encontrar definições pq não tem projeto
-        # mas a lógica de extração funciona
-        symbols_found = {c.function_name for c in callees if c.function_name}
 
         # A função retorna vazio pq não tem projeto real para buscar
         # Este teste valida apenas que não dá erro

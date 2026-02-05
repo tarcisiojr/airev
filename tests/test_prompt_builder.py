@@ -1,7 +1,5 @@
 """Testes para o prompt_builder."""
 
-import pytest
-
 from code_reviewer.models import ContextGraph, DiffFile, DiffHunk, DiffLine, FunctionRef
 from code_reviewer.prompt_builder import (
     build_prompt,

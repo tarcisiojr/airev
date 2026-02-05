@@ -2,10 +2,7 @@
 
 import io
 
-import pytest
-
 from code_reviewer.formatters.terminal import (
-    format_file_header,
     format_finding,
     format_header,
     format_result,

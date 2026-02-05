@@ -14,6 +14,7 @@ src/code_reviewer.egg-info/requires.txt
 src/code_reviewer.egg-info/top_level.txt
 src/code_reviewer/formatters/__init__.py
 src/code_reviewer/formatters/terminal.py
+src/code_reviewer/prompts/review_system.md
 src/code_reviewer/runners/__init__.py
 src/code_reviewer/runners/base.py
 src/code_reviewer/runners/copilot.py

@@ -2,8 +2,6 @@
 
 import json
 
-import pytest
-
 from code_reviewer.models import Category, Severity
 from code_reviewer.response_parser import (
     extract_json_by_braces,
@@ -169,8 +167,9 @@ class TestParseFinding:
         }
 
         # Deve tratar graciosamente
-        finding = parse_finding(data)
+        result = parse_finding(data)
         # Pode retornar None ou converter o valor
+        assert result is None or result.file == "test.py"
 
 
 class TestParseResponse:

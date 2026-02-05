@@ -59,5 +59,5 @@
 
 ## 10. Validação e documentação
 
-- [ ] 10.1 Rodar pipeline completo localmente contra um repositório de teste
-- [ ] 10.2 Verificar que `pip install .` funciona e o comando `code-reviewer review --base main` está disponível
+- [x] 10.1 Rodar pipeline completo localmente contra um repositório de teste
+- [x] 10.2 Verificar que `pip install .` funciona e o comando `code-reviewer review --base main` está disponível

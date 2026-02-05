@@ -1,7 +1,5 @@
 """Testes para o diff_parser."""
 
-import pytest
-
 from code_reviewer.diff_parser import (
     get_modified_functions,
     is_ignored_file,
