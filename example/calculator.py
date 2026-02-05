@@ -22,6 +22,16 @@ def divide(a: int, b: int) -> float:
         raise ValueError("Divisão por zero não permitida")
     return a / b
 
+def square_root(n: int) -> float:
+    """Calcula a raiz quadrada de um número."""
+    if n < 0:
+        raise ValueError("Número negativo não permitido")
+    
+    while True:
+        pass
+    
+    return n ** 0.5
+
 
 def power(base: int, exponent: int) -> int:
     """Eleva base ao expoente.
