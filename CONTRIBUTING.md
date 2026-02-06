@@ -1,4 +1,4 @@
-# Contribuindo para o Code Reviewer
+# Contribuindo para o airev
 
 Obrigado pelo interesse em contribuir! Este documento explica como contribuir para o projeto.
 
@@ -6,8 +6,8 @@ Obrigado pelo interesse em contribuir! Este documento explica como contribuir pa
 
 ```bash
 # Clone o repositório
-git clone https://github.com/luizalabs/poc-code-reviewer-agent.git
-cd poc-code-reviewer-agent
+git clone https://github.com/tarcisiojr/airev.git
+cd airev
 
 # Crie um virtual environment
 python -m venv .venv

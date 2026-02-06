@@ -55,9 +55,9 @@ def run_upgrade(console: Console | None = None) -> bool:
 
     # Monta comando de upgrade
     if installer == "pipx":
-        cmd = ["pipx", "upgrade", "code-reviewer"]
+        cmd = ["pipx", "upgrade", "airev"]
     else:
-        cmd = [sys.executable, "-m", "pip", "install", "--upgrade", "code-reviewer"]
+        cmd = [sys.executable, "-m", "pip", "install", "--upgrade", "airev"]
 
     try:
         result = subprocess.run(
@@ -80,7 +80,7 @@ def run_upgrade(console: Console | None = None) -> bool:
     except FileNotFoundError:
         console.print(f"[red]✗[/] Comando '{cmd[0]}' não encontrado")
         if installer == "pipx":
-            console.print("[dim]Tente: pip install --upgrade code-reviewer[/]")
+            console.print("[dim]Tente: pip install --upgrade airev[/]")
         return False
     except Exception as e:
         console.print(f"[red]✗[/] Erro inesperado: {e}")

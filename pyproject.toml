@@ -3,7 +3,7 @@ requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "code-reviewer"
+name = "airev"
 dynamic = ["version"]
 description = "CLI tool for AI-powered code review with context backtracking"
 readme = "README.md"
@@ -40,7 +40,7 @@ dev = [
 ]
 
 [project.scripts]
-code-reviewer = "code_reviewer.cli:main"
+airev = "code_reviewer.cli:main"
 
 [tool.setuptools.dynamic]
 version = {attr = "code_reviewer.__version__"}

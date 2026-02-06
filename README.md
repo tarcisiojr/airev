@@ -1,4 +1,4 @@
-# Code Reviewer
+# airev
 
 CLI para revisão de código automatizada com IA. Analisa diffs de branches Git e identifica problemas de segurança, performance, bugs e vazamentos de recursos.
 
@@ -28,22 +28,22 @@ CLI para revisão de código automatizada com IA. Analisa diffs de branches Git 
 pip install pipx
 pipx ensurepath
 
-# Instala o code-reviewer
-pipx install code-reviewer
+# Instala o airev
+pipx install airev
 ```
 
 ### Via pip
 
 ```bash
-pip install code-reviewer
+pip install airev
 ```
 
 ### Desenvolvimento local
 
 ```bash
 # Clone o repositório
-git clone https://github.com/luizalabs/poc-code-reviewer-agent.git
-cd poc-code-reviewer-agent
+git clone https://github.com/tarcisiojr/airev.git
+cd airev
 
 # Instala em modo desenvolvimento
 pip install -e ".[dev]"
@@ -51,21 +51,21 @@ pip install -e ".[dev]"
 
 ## Atualização
 
-O code-reviewer verifica automaticamente por novas versões e notifica quando há atualizações disponíveis.
+O airev verifica automaticamente por novas versões e notifica quando há atualizações disponíveis.
 
 ```bash
 # Atualiza para a versão mais recente
-code-reviewer upgrade
+airev upgrade
 
 # Ou manualmente
-pipx upgrade code-reviewer
+pipx upgrade airev
 # ou
-pip install --upgrade code-reviewer
+pip install --upgrade airev
 ```
 
 Para desabilitar a verificação automática:
 ```bash
-export CODE_REVIEWER_NO_UPDATE_CHECK=1
+export AIREV_NO_UPDATE_CHECK=1
 ```
 
 ## Uso
@@ -74,19 +74,19 @@ export CODE_REVIEWER_NO_UPDATE_CHECK=1
 
 ```bash
 # Analisa a branch atual contra main
-code-reviewer review --base main
+airev review --base main
 
 # Analisa contra develop usando Copilot
-code-reviewer review --base develop --runner copilot
+airev review --base develop --runner copilot
 
 # Output em JSON para CI/CD
-code-reviewer review --base main --json-output
+airev review --base main --json-output
 
 # Modo silencioso (sem animações)
-code-reviewer review --base main --no-progress
+airev review --base main --no-progress
 
 # Em inglês
-code-reviewer review --base main --lang en
+airev review --base main --lang en
 ```
 
 ### Opções do comando `review`
@@ -104,7 +104,7 @@ code-reviewer review --base main --lang en
 ### Listar runners disponíveis
 
 ```bash
-code-reviewer runners
+airev runners
 ```
 
 ## Runners de IA
@@ -178,8 +178,8 @@ Com `--json-output`, o resultado segue a estrutura:
 ```yaml
 - name: Code Review
   run: |
-    pip install code-reviewer
-    code-reviewer review --base main --no-progress --json-output > review.json
+    pip install airev
+    airev review --base main --no-progress --json-output > review.json
 
 - name: Check Critical Findings
   run: |

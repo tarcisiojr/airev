@@ -205,7 +205,7 @@ class TestCheckForUpdate:
     def test_check_opt_out(self):
         """Deve retornar None quando opt-out está ativo."""
         with patch.dict(
-            "os.environ", {"CODE_REVIEWER_NO_UPDATE_CHECK": "1"}
+            "os.environ", {"AIREV_NO_UPDATE_CHECK": "1"}
         ):
             result = check_for_update()
 
@@ -334,4 +334,4 @@ class TestRunUpgrade:
             mock_run.assert_called_once()
             cmd = mock_run.call_args[0][0]
             assert "--upgrade" in cmd
-            assert "code-reviewer" in cmd
+            assert "airev" in cmd

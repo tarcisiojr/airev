@@ -11,8 +11,8 @@ from .http_client import get_http_client
 
 
 # Configurações
-PYPI_URL = "https://pypi.org/pypi/code-reviewer/json"
-CACHE_DIR = Path.home() / ".cache" / "code-reviewer"
+PYPI_URL = "https://pypi.org/pypi/airev/json"
+CACHE_DIR = Path.home() / ".cache" / "airev"
 CACHE_FILE = CACHE_DIR / "update-check.json"
 CACHE_TTL = timedelta(hours=1)
 DEFAULT_TIMEOUT = 5.0
@@ -144,7 +144,7 @@ def check_for_update(timeout: float = DEFAULT_TIMEOUT) -> UpdateInfo | None:
         UpdateInfo se há atualização, None se já está atualizado ou falhou
     """
     # Verifica opt-out via variável de ambiente
-    if os.environ.get("CODE_REVIEWER_NO_UPDATE_CHECK", "").strip() == "1":
+    if os.environ.get("AIREV_NO_UPDATE_CHECK", "").strip() == "1":
         return None
 
     current = __version__

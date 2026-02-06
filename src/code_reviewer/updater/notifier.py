@@ -20,8 +20,8 @@ def notify_update(info: UpdateInfo, console: Console | None = None) -> None:
         f"[bold yellow]Nova versão {info.latest_version} disponível[/] "
         f"[dim](atual: {info.current_version})[/]\n\n"
         f"Atualize com:\n"
-        f"  [cyan]pipx upgrade code-reviewer[/]\n\n"
-        f"Ou execute: [cyan]code-reviewer upgrade[/]"
+        f"  [cyan]pipx upgrade airev[/]\n\n"
+        f"Ou execute: [cyan]airev upgrade[/]"
     )
 
     panel = Panel(
