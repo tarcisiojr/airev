@@ -21,16 +21,51 @@ CLI para revisão de código automatizada com IA. Analisa diffs de branches Git 
   - [Gemini CLI](https://github.com/google-gemini/gemini-cli) (padrão)
   - [GitHub Copilot CLI](https://github.com/github/copilot-cli)
 
+### Via pipx (Recomendado)
+
+```bash
+# Instala o pipx se ainda não tiver
+pip install pipx
+pipx ensurepath
+
+# Instala o code-reviewer
+pipx install code-reviewer
+```
+
 ### Via pip
 
 ```bash
-pip install -e .
+pip install code-reviewer
 ```
 
-### Dependências de desenvolvimento
+### Desenvolvimento local
 
 ```bash
+# Clone o repositório
+git clone https://github.com/luizalabs/poc-code-reviewer-agent.git
+cd poc-code-reviewer-agent
+
+# Instala em modo desenvolvimento
 pip install -e ".[dev]"
+```
+
+## Atualização
+
+O code-reviewer verifica automaticamente por novas versões e notifica quando há atualizações disponíveis.
+
+```bash
+# Atualiza para a versão mais recente
+code-reviewer upgrade
+
+# Ou manualmente
+pipx upgrade code-reviewer
+# ou
+pip install --upgrade code-reviewer
+```
+
+Para desabilitar a verificação automática:
+```bash
+export CODE_REVIEWER_NO_UPDATE_CHECK=1
 ```
 
 ## Uso

@@ -15,6 +15,7 @@ from .i18n import get_available_languages, set_language, t
 from .prompt_builder import build_prompt
 from .response_parser import parse_response
 from .runners import DEFAULT_RUNNER, RunnerNotFoundError, get_runner, list_runners
+from .updater import check_for_update, notify_update, run_upgrade
 
 
 @click.group()
@@ -115,6 +116,16 @@ def review(
         enabled=not json_output,
         force_terminal=force_terminal,
     )
+
+    # Verifica atualizações (apenas em modo interativo)
+    if not json_output:
+        try:
+            update_info = check_for_update()
+            if update_info:
+                notify_update(update_info)
+        except Exception:
+            # Falha silenciosa - não bloqueia execução
+            pass
 
     # Obtém o nome da branch atual
     try:
@@ -217,6 +228,16 @@ def runners():
         runner = get_runner(name)
         available = "✓" if runner.check_availability() else "✗"
         click.echo(f"  {available} {name}")
+
+
+@main.command()
+def upgrade():
+    """Atualiza o code-reviewer para a versão mais recente."""
+    from rich.console import Console
+
+    console = Console()
+    success = run_upgrade(console)
+    sys.exit(0 if success else 1)
 
 
 if __name__ == "__main__":

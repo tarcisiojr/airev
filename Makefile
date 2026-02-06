@@ -1,4 +1,4 @@
-.PHONY: help install install-dev build clean test test-cov lint format check dist publish run
+.PHONY: help install install-dev build clean test test-cov lint format check dist publish run release release-dry-run
 
 # Variáveis
 PYTHON := python3
@@ -54,6 +54,22 @@ publish-test: build ## Publica no TestPyPI
 
 publish: build ## Publica no PyPI
 	$(PYTHON) -m twine upload dist/*
+
+# ============================================
+# Release Automation (Semantic Release)
+# ============================================
+
+release-dry-run: ## Preview da próxima versão (sem aplicar)
+	@echo "$(YELLOW)Analisando commits para determinar próxima versão...$(NC)"
+	semantic-release version --print
+	@echo ""
+	@echo "$(BLUE)Para aplicar o release, execute: make release$(NC)"
+
+release: ## Executa release local (requer credenciais)
+	@echo "$(YELLOW)Executando semantic-release...$(NC)"
+	semantic-release version
+	semantic-release publish
+	@echo "$(GREEN)Release concluído!$(NC)"
 
 # ============================================
 # Testes e Qualidade
