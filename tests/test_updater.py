@@ -1,6 +1,7 @@
 """Testes para o módulo de auto-update."""
 
 import json
+import subprocess
 import sys
 from datetime import datetime, timedelta, timezone
 from io import StringIO
@@ -17,11 +18,16 @@ from code_reviewer.updater.version_check import (
     _read_cache,
     _write_cache,
     check_for_update,
+    clear_cache,
     compare_versions,
     get_latest_version,
 )
 from code_reviewer.updater.notifier import notify_update
-from code_reviewer.updater.upgrade import detect_installer, run_upgrade
+from code_reviewer.updater.upgrade import (
+    detect_installer,
+    get_installed_version,
+    run_upgrade,
+)
 
 
 class TestHttpClient:
@@ -159,6 +165,48 @@ class TestCache:
         assert cache is None
 
 
+class TestClearCache:
+    """Testes para clear_cache."""
+
+    def test_clear_existing_cache(self, tmp_path):
+        """Deve remover arquivo de cache existente."""
+        cache_file = tmp_path / "update-check.json"
+        cache_file.write_text('{"test": true}')
+
+        with patch(
+            "code_reviewer.updater.version_check.CACHE_FILE", cache_file
+        ):
+            result = clear_cache()
+
+        assert result is True
+        assert not cache_file.exists()
+
+    def test_clear_nonexistent_cache(self, tmp_path):
+        """Deve retornar True quando cache não existe."""
+        cache_file = tmp_path / "nonexistent.json"
+
+        with patch(
+            "code_reviewer.updater.version_check.CACHE_FILE", cache_file
+        ):
+            result = clear_cache()
+
+        assert result is True
+
+    def test_clear_cache_permission_error(self, tmp_path):
+        """Deve retornar False quando não consegue remover."""
+        cache_file = tmp_path / "update-check.json"
+        cache_file.write_text('{"test": true}')
+
+        with patch(
+            "code_reviewer.updater.version_check.CACHE_FILE", cache_file
+        ), patch(
+            "pathlib.Path.unlink", side_effect=OSError("Permission denied")
+        ):
+            result = clear_cache()
+
+        assert result is False
+
+
 class TestCheckForUpdate:
     """Testes para check_for_update."""
 
@@ -272,24 +320,123 @@ class TestDetectInstaller:
             assert result == "pip"
 
 
+class TestGetInstalledVersion:
+    """Testes para get_installed_version."""
+
+    def test_get_version_pipx_json(self):
+        """Deve obter versão do pipx list --json."""
+        pipx_json = {
+            "venvs": {
+                "airev": {
+                    "metadata": {
+                        "main_package": {
+                            "package_version": "1.2.3"
+                        }
+                    }
+                }
+            }
+        }
+        mock_result = MagicMock(returncode=0, stdout=json.dumps(pipx_json))
+
+        with patch("subprocess.run", return_value=mock_result):
+            result = get_installed_version("pipx")
+
+        assert result == "1.2.3"
+
+    def test_get_version_pipx_not_installed(self):
+        """Deve retornar None quando airev não está instalado no pipx."""
+        pipx_json = {"venvs": {}}
+        mock_result = MagicMock(returncode=0, stdout=json.dumps(pipx_json))
+
+        with patch("subprocess.run", return_value=mock_result):
+            result = get_installed_version("pipx")
+
+        assert result is None
+
+    def test_get_version_pip(self):
+        """Deve obter versão do pip show."""
+        pip_output = """Name: airev
+Version: 1.0.0
+Summary: Code reviewer CLI
+"""
+        mock_result = MagicMock(returncode=0, stdout=pip_output)
+
+        with patch("subprocess.run", return_value=mock_result):
+            result = get_installed_version("pip")
+
+        assert result == "1.0.0"
+
+    def test_get_version_pip_not_installed(self):
+        """Deve retornar None quando pip show falha."""
+        mock_result = MagicMock(returncode=1, stdout="")
+
+        with patch("subprocess.run", return_value=mock_result):
+            result = get_installed_version("pip")
+
+        assert result is None
+
+    def test_get_version_subprocess_error(self):
+        """Deve retornar None em erro de subprocess."""
+        with patch("subprocess.run", side_effect=subprocess.SubprocessError):
+            result = get_installed_version("pipx")
+
+        assert result is None
+
+
 class TestRunUpgrade:
     """Testes para run_upgrade."""
 
     def test_upgrade_no_update_available(self):
-        """Deve retornar False quando não há update."""
+        """Deve retornar False e limpar cache quando não há update."""
         from rich.console import Console
 
         console = Console(file=StringIO(), force_terminal=True)
 
         with patch(
             "code_reviewer.updater.upgrade.check_for_update", return_value=None
-        ):
+        ), patch(
+            "code_reviewer.updater.upgrade.clear_cache", return_value=True
+        ) as mock_clear:
             result = run_upgrade(console)
 
             assert result is False
+            mock_clear.assert_called_once()
 
-    def test_upgrade_success_pipx(self):
-        """Deve executar pipx upgrade com sucesso."""
+    def test_upgrade_success_pipx_version_changed(self):
+        """Deve executar pipx upgrade e verificar mudança de versão."""
+        from rich.console import Console
+
+        console = Console(file=StringIO(), force_terminal=True)
+        update_info = UpdateInfo(current_version="0.1.0", latest_version="0.2.0")
+        mock_result = MagicMock(returncode=0, stderr="")
+
+        # Simula versão mudando de 0.1.0 para 0.2.0 após upgrade
+        version_calls = iter(["0.1.0", "0.2.0"])
+
+        with patch(
+            "code_reviewer.updater.upgrade.check_for_update",
+            return_value=update_info,
+        ), patch(
+            "code_reviewer.updater.upgrade.detect_installer", return_value="pipx"
+        ), patch(
+            "code_reviewer.updater.upgrade.get_installed_version",
+            side_effect=lambda _: next(version_calls),
+        ), patch(
+            "code_reviewer.updater.upgrade.clear_cache", return_value=True
+        ) as mock_clear, patch(
+            "subprocess.run", return_value=mock_result
+        ) as mock_run:
+            result = run_upgrade(console)
+
+            assert result is True
+            mock_run.assert_called_once()
+            mock_clear.assert_called_once()
+            cmd = mock_run.call_args[0][0]
+            assert "pipx" in cmd
+            assert "upgrade" in cmd
+
+    def test_upgrade_success_but_version_unchanged(self):
+        """Deve retornar False quando versão não muda após upgrade."""
         from rich.console import Console
 
         console = Console(file=StringIO(), force_terminal=True)
@@ -302,29 +449,38 @@ class TestRunUpgrade:
         ), patch(
             "code_reviewer.updater.upgrade.detect_installer", return_value="pipx"
         ), patch(
+            "code_reviewer.updater.upgrade.get_installed_version",
+            return_value="0.1.0",  # Versão não muda
+        ), patch(
+            "code_reviewer.updater.upgrade.clear_cache", return_value=True
+        ) as mock_clear, patch(
             "subprocess.run", return_value=mock_result
-        ) as mock_run:
+        ):
             result = run_upgrade(console)
 
-            assert result is True
-            mock_run.assert_called_once()
-            cmd = mock_run.call_args[0][0]
-            assert "pipx" in cmd
-            assert "upgrade" in cmd
+            assert result is False
+            mock_clear.assert_called_once()
 
-    def test_upgrade_success_pip(self):
-        """Deve executar pip install --upgrade com sucesso."""
+    def test_upgrade_success_pip_version_changed(self):
+        """Deve executar pip install --upgrade e verificar mudança."""
         from rich.console import Console
 
         console = Console(file=StringIO(), force_terminal=True)
         update_info = UpdateInfo(current_version="0.1.0", latest_version="0.2.0")
         mock_result = MagicMock(returncode=0, stderr="")
 
+        version_calls = iter(["0.1.0", "0.2.0"])
+
         with patch(
             "code_reviewer.updater.upgrade.check_for_update",
             return_value=update_info,
         ), patch(
             "code_reviewer.updater.upgrade.detect_installer", return_value="pip"
+        ), patch(
+            "code_reviewer.updater.upgrade.get_installed_version",
+            side_effect=lambda _: next(version_calls),
+        ), patch(
+            "code_reviewer.updater.upgrade.clear_cache", return_value=True
         ), patch(
             "subprocess.run", return_value=mock_result
         ) as mock_run:
@@ -335,3 +491,54 @@ class TestRunUpgrade:
             cmd = mock_run.call_args[0][0]
             assert "--upgrade" in cmd
             assert "airev" in cmd
+
+    def test_upgrade_clears_cache_on_failure(self):
+        """Deve limpar cache mesmo quando upgrade falha."""
+        from rich.console import Console
+
+        console = Console(file=StringIO(), force_terminal=True)
+        update_info = UpdateInfo(current_version="0.1.0", latest_version="0.2.0")
+        mock_result = MagicMock(returncode=1, stderr="Error")
+
+        with patch(
+            "code_reviewer.updater.upgrade.check_for_update",
+            return_value=update_info,
+        ), patch(
+            "code_reviewer.updater.upgrade.detect_installer", return_value="pipx"
+        ), patch(
+            "code_reviewer.updater.upgrade.get_installed_version",
+            return_value="0.1.0",
+        ), patch(
+            "code_reviewer.updater.upgrade.clear_cache", return_value=True
+        ) as mock_clear, patch(
+            "subprocess.run", return_value=mock_result
+        ):
+            result = run_upgrade(console)
+
+            assert result is False
+            mock_clear.assert_called_once()
+
+    def test_upgrade_clears_cache_on_exception(self):
+        """Deve limpar cache quando ocorre exceção."""
+        from rich.console import Console
+
+        console = Console(file=StringIO(), force_terminal=True)
+        update_info = UpdateInfo(current_version="0.1.0", latest_version="0.2.0")
+
+        with patch(
+            "code_reviewer.updater.upgrade.check_for_update",
+            return_value=update_info,
+        ), patch(
+            "code_reviewer.updater.upgrade.detect_installer", return_value="pipx"
+        ), patch(
+            "code_reviewer.updater.upgrade.get_installed_version",
+            return_value="0.1.0",
+        ), patch(
+            "code_reviewer.updater.upgrade.clear_cache", return_value=True
+        ) as mock_clear, patch(
+            "subprocess.run", side_effect=FileNotFoundError
+        ):
+            result = run_upgrade(console)
+
+            assert result is False
+            mock_clear.assert_called_once()

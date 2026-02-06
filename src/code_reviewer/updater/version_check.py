@@ -110,6 +110,24 @@ def _write_cache(latest_version: str) -> None:
         pass
 
 
+def clear_cache() -> bool:
+    """Remove o arquivo de cache de verificação de versão.
+
+    Deve ser chamada após upgrade para garantir que a próxima
+    verificação consulte o PyPI novamente.
+
+    Returns:
+        True se o cache foi removido ou não existia, False se falhou
+    """
+    try:
+        if CACHE_FILE.exists():
+            CACHE_FILE.unlink()
+        return True
+    except OSError:
+        # Falha ao remover cache - ignora silenciosamente
+        return False
+
+
 def get_latest_version(timeout: float = DEFAULT_TIMEOUT) -> str | None:
     """Consulta PyPI para obter a versão mais recente.
 
