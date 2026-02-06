@@ -49,4 +49,4 @@ htmlcov/
 *.tmp
 *.temp
 *.log
-.code-reviewer-prompt.md
+.airev-prompt.md

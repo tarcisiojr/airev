@@ -54,18 +54,18 @@ O sistema DEVE suprimir notificação de update quando output é JSON.
 
 ### Requirement: Comando upgrade
 
-O sistema DEVE fornecer comando `code-reviewer upgrade` para facilitar atualização.
+O sistema DEVE fornecer comando `airev upgrade` para facilitar atualização.
 
 #### Scenario: Update disponível via pipx
-- **WHEN** usuário executa `code-reviewer upgrade` e foi instalado via pipx
-- **THEN** sistema executa `pipx upgrade code-reviewer`
+- **WHEN** usuário executa `airev upgrade` e foi instalado via pipx
+- **THEN** sistema executa `pipx upgrade airev`
 
 #### Scenario: Update disponível via pip
-- **WHEN** usuário executa `code-reviewer upgrade` e foi instalado via pip
-- **THEN** sistema executa `pip install --upgrade code-reviewer`
+- **WHEN** usuário executa `airev upgrade` e foi instalado via pip
+- **THEN** sistema executa `pip install --upgrade airev`
 
 #### Scenario: Já está na versão mais recente
-- **WHEN** usuário executa `code-reviewer upgrade` e já está na versão mais recente
+- **WHEN** usuário executa `airev upgrade` e já está na versão mais recente
 - **THEN** sistema informa que já está atualizado
 
 ### Requirement: Timeout de verificação

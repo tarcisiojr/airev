@@ -23,7 +23,7 @@ O sistema SHALL exibir um spinner animado com mensagem de status durante cada et
 O sistema SHALL aceitar a flag `--no-progress` para desabilitar todas as animações e spinners.
 
 #### Scenario: Flag --no-progress desabilita spinners
-- **WHEN** o usuário executa `code-reviewer review --base main --no-progress`
+- **WHEN** o usuário executa `airev review --base main --no-progress`
 - **THEN** o terminal exibe mensagens de status simples em vez de spinners animados
 
 #### Scenario: Mensagens de progresso em modo texto

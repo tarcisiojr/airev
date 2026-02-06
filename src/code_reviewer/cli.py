@@ -1,4 +1,4 @@
-"""CLI Entry Point - Comando principal do code-reviewer."""
+"""CLI Entry Point - Comando principal do airev."""
 
 import sys
 import time
@@ -88,13 +88,13 @@ def review(
 
     Exemplos:
 
-        code-reviewer review --base main
+        airev review --base main
 
-        code-reviewer review --base develop --runner copilot
+        airev review --base develop --runner copilot
 
-        code-reviewer review --base main --json-output
+        airev review --base main --json-output
 
-        code-reviewer review --base main --no-progress
+        airev review --base main --no-progress
     """
     workdir = workdir or Path.cwd()
     start_time = time.perf_counter()
@@ -232,7 +232,7 @@ def runners():
 
 @main.command()
 def upgrade():
-    """Atualiza o code-reviewer para a versão mais recente."""
+    """Atualiza o airev para a versão mais recente."""
     from rich.console import Console
 
     console = Console()

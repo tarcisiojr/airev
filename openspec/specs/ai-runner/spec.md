@@ -47,7 +47,7 @@ O sistema SHALL implementar `CopilotCLIRunner` que executa o prompt via `copilot
 O sistema SHALL permitir selecionar o runner via flag `--runner` (ex: `--runner gemini`, `--runner copilot`), com `gemini` como valor default.
 
 #### Scenario: Runner selecionado via flag
-- **WHEN** o usuário executa `code-reviewer review --base main --runner copilot`
+- **WHEN** o usuário executa `airev review --base main --runner copilot`
 - **THEN** o sistema usa o `CopilotCLIRunner` para executar a análise
 
 #### Scenario: Runner inválido

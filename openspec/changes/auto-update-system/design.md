@@ -1,6 +1,6 @@
 ## Context
 
-O code-reviewer é uma CLI Python distribuída via PyPI. Atualmente não há mecanismo para informar usuários sobre novas versões. CLIs modernas (Claude Code, Copilot CLI, Gemini CLI) implementam verificação de versão no startup com notificação não-intrusiva.
+O airev é uma CLI Python distribuída via PyPI. Atualmente não há mecanismo para informar usuários sobre novas versões. CLIs modernas (Claude Code, Copilot CLI, Gemini CLI) implementam verificação de versão no startup com notificação não-intrusiva.
 
 **Estado atual:**
 - Versão definida em `__init__.py`
@@ -42,7 +42,7 @@ src/code_reviewer/updater/
 
 **Rationale:** Módulo isolado permite evolução independente e facilita testes. Abstração HTTP via Protocol permite trocar implementação sem alterar consumidores.
 
-### 2. Cache de 1 hora em ~/.cache/code-reviewer/
+### 2. Cache de 1 hora em ~/.cache/airev/
 
 **Alternativas consideradas:**
 - Sem cache: muitos requests ao PyPI, lento

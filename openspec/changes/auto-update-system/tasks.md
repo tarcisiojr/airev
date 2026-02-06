@@ -13,7 +13,7 @@
 
 - [x] 3.1 Criar `updater/version_check.py`
 - [x] 3.2 Implementar função get_latest_version() que consulta PyPI
-- [x] 3.3 Implementar lógica de cache em ~/.cache/code-reviewer/update-check.json
+- [x] 3.3 Implementar lógica de cache em ~/.cache/airev/update-check.json
 - [x] 3.4 Implementar check_for_update() que retorna UpdateInfo | None
 - [x] 3.5 Implementar comparação de versões (packaging.version ou manual)
 

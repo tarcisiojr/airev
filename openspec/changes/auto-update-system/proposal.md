@@ -9,7 +9,7 @@ Além disso, o processo de release precisa ser automatizado para garantir versio
 - Adicionar módulo `updater/` com sistema de verificação de versão
 - Implementar check de versão no startup do CLI (com cache de 1 hora)
 - Adicionar notificação visual quando há atualização disponível
-- Criar comando `code-reviewer upgrade` para facilitar atualização
+- Criar comando `airev upgrade` para facilitar atualização
 - Abstrair cliente HTTP para permitir troca futura (urllib → httpx)
 - Suportar opt-out via variável de ambiente
 - Configurar python-semantic-release para automação de releases
@@ -34,8 +34,8 @@ Além disso, o processo de release precisa ser automatizado para garantir versio
 - **CLI**: Modificação em `cli.py` para integrar check e novo comando
 - **Dependências runtime**: Nenhuma nova (usa urllib da stdlib)
 - **Dependências dev**: python-semantic-release
-- **Filesystem**: Novo diretório de cache em `~/.cache/code-reviewer/`
-- **Network**: Requests ao PyPI (https://pypi.org/pypi/code-reviewer/json)
+- **Filesystem**: Novo diretório de cache em `~/.cache/airev/`
+- **Network**: Requests ao PyPI (https://pypi.org/pypi/airev/json)
 - **Ambiente**: Nova env var `CODE_REVIEWER_NO_UPDATE_CHECK`
 - **CI/CD**: Novo workflow GitHub Actions para release automático
 - **Configs**: pyproject.toml (semantic-release), .github/workflows/release.yml

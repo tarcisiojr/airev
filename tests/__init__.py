@@ -1,1 +1,1 @@
-"""Tests for code-reviewer."""
+"""Tests for airev."""

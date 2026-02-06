@@ -107,7 +107,7 @@ run: ## Executa o CLI (use: make run ARGS="review --base main")
 	$(PYTHON) -m $(PACKAGE).cli $(ARGS)
 
 runners: ## Lista runners disponíveis
-	code-reviewer runners
+	airev runners
 
 # ============================================
 # Desenvolvimento

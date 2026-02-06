@@ -30,7 +30,7 @@ class UrllibClient:
         try:
             request = urllib.request.Request(
                 url,
-                headers={"Accept": "application/json", "User-Agent": "code-reviewer"},
+                headers={"Accept": "application/json", "User-Agent": "airev"},
             )
             with urllib.request.urlopen(request, timeout=timeout) as response:
                 data = response.read().decode("utf-8")

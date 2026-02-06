@@ -60,7 +60,7 @@ jobs:
 #   - Token de API do PyPI
 #   - Necessário para publicar pacotes
 #   - Criar em: https://pypi.org/manage/account/token/
-#   - Scope: Upload packages (para o projeto code-reviewer)
+#   - Scope: Upload packages (para o projeto airev)
 #
 # Como adicionar secrets:
 #   1. Vá em Settings do repositório

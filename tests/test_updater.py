@@ -252,7 +252,7 @@ class TestDetectInstaller:
 
     def test_detect_pipx(self):
         """Deve detectar pipx quando no path do executável."""
-        fake_path = Path("/home/user/.local/pipx/venvs/code-reviewer/bin/python")
+        fake_path = Path("/home/user/.local/pipx/venvs/airev/bin/python")
         with patch.object(sys, "executable", str(fake_path)):
             result = detect_installer()
             assert result == "pipx"
