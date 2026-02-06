@@ -10,4 +10,4 @@
 ## 3. Validação
 
 - [x] 3.1 Executar testes existentes para garantir que a mudança não quebrou nada
-- [ ] 3.2 Testar manualmente com um diff parcial para verificar que falsos positivos de sintaxe foram reduzidos
+- [x] 3.2 Testar manualmente com um diff parcial para verificar que falsos positivos de sintaxe foram reduzidos

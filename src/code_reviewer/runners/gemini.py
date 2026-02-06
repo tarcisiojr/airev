@@ -7,10 +7,10 @@ from .base import RunnerNotFoundError, check_command_exists
 
 
 class GeminiCLIRunner:
-    """Runner que executa prompts via Gemini CLI.
+    """Runner que executa prompts via Gemini CLI com capacidades agentic.
 
-    O Gemini CLI é a ferramenta oficial do Google para interagir
-    com o Gemini a partir do terminal.
+    Utiliza o flag `-y` (YOLO mode) que auto-aprova tools, permitindo
+    que o Gemini leia arquivos e busque contexto adicional automaticamente.
 
     Instalação: https://github.com/google-gemini/gemini-cli
     """
@@ -25,18 +25,20 @@ class GeminiCLIRunner:
         return check_command_exists("gemini")
 
     def run(self, prompt: str, workdir: Path) -> str:
-        """Executa o prompt via Gemini CLI.
+        """Executa o prompt via Gemini CLI com capacidades agentic.
+
+        Usa flag -y (YOLO mode) para auto-aprovar tools de leitura
+        de arquivos e busca de contexto.
 
         Args:
             prompt: O prompt completo para enviar
-            workdir: Diretório de trabalho
+            workdir: Diretório de trabalho (usado como contexto para o agente)
 
         Returns:
             Resposta do Gemini
 
         Raises:
             RunnerNotFoundError: Se gemini-cli não estiver instalado
-            subprocess.CalledProcessError: Se a execução falhar
         """
         if not self.check_availability():
             raise RunnerNotFoundError(
