@@ -22,6 +22,8 @@ class Category(str, Enum):
     BUG = "bug"
     RESOURCE_LEAK = "resource-leak"
     TEXT_QUALITY = "text-quality"
+    BREAKING_CHANGE = "breaking-change"
+    ERROR_HANDLING = "error-handling"
 
 
 class DiffLine(BaseModel):
@@ -84,6 +86,14 @@ class ContextGraph(BaseModel):
     )
 
 
+class GoodPractice(BaseModel):
+    """Uma boa prática identificada no código."""
+
+    file: str = Field(description="Caminho do arquivo")
+    line: int = Field(description="Número da linha")
+    description: str = Field(description="Descrição da boa prática identificada")
+
+
 class Finding(BaseModel):
     """Um achado da análise de código."""
 
@@ -91,12 +101,18 @@ class Finding(BaseModel):
     line: int = Field(description="Número da linha")
     severity: Severity = Field(description="Severidade: CRITICAL, WARNING, INFO")
     category: Category = Field(
-        description="Categoria: security, performance, bug, resource-leak, text-quality"
+        description="Categoria: security, performance, bug, resource-leak, text-quality, breaking-change, error-handling"
     )
     title: str = Field(description="Título curto do problema")
     description: str = Field(description="Descrição detalhada do problema")
     suggestion: str = Field(default="", description="Sugestão de correção")
     code_snippet: str = Field(default="", description="Trecho de código relevante")
+    confidence: int = Field(
+        default=10,
+        ge=1,
+        le=10,
+        description="Score de confiança do finding (1-10)",
+    )
 
 
 class ReviewSummary(BaseModel):
@@ -116,6 +132,9 @@ class ReviewResult(BaseModel):
     files_analyzed: int = Field(description="Quantidade de arquivos analisados")
     findings: list[Finding] = Field(
         default_factory=list, description="Lista de findings"
+    )
+    good_practices: list[GoodPractice] = Field(
+        default_factory=list, description="Lista de boas práticas identificadas"
     )
     summary: ReviewSummary = Field(description="Resumo da análise")
     raw_response: Optional[str] = Field(

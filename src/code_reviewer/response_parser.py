@@ -5,7 +5,14 @@ import re
 from typing import Any, Optional
 
 from .i18n import t
-from .models import Category, Finding, ReviewResult, ReviewSummary, Severity
+from .models import (
+    Category,
+    Finding,
+    GoodPractice,
+    ReviewResult,
+    ReviewSummary,
+    Severity,
+)
 
 
 def extract_json_from_markdown(text: str) -> Optional[str]:
@@ -63,7 +70,7 @@ def extract_json_by_braces(text: str) -> Optional[str]:
         elif char == "}":
             depth -= 1
             if depth == 0:
-                return text[start:i + 1]
+                return text[start : i + 1]
 
     return None
 
@@ -126,9 +133,60 @@ def normalize_category(value: str) -> Category:
         "spelling": Category.TEXT_QUALITY,
         "grammar": Category.TEXT_QUALITY,
         "typo": Category.TEXT_QUALITY,
+        "breaking-change": Category.BREAKING_CHANGE,
+        "breaking_change": Category.BREAKING_CHANGE,
+        "breaking": Category.BREAKING_CHANGE,
+        "api-change": Category.BREAKING_CHANGE,
+        "error-handling": Category.ERROR_HANDLING,
+        "error_handling": Category.ERROR_HANDLING,
+        "exception-handling": Category.ERROR_HANDLING,
+        "exception": Category.ERROR_HANDLING,
     }
 
     return mapping.get(value_lower, Category.BUG)
+
+
+def normalize_confidence(value: Any) -> int:
+    """Normaliza valor de confidence para inteiro no range 1-10.
+
+    Args:
+        value: Valor de confidence (pode ser int, float, str ou None)
+
+    Returns:
+        Inteiro no range 1-10, com fallback para 10 se ausente/inválido
+    """
+    if value is None:
+        return 10
+
+    try:
+        confidence = int(value)
+        # Aplica clamp no range 1-10
+        if confidence < 1:
+            return 1
+        if confidence > 10:
+            return 10
+        return confidence
+    except (ValueError, TypeError):
+        return 10
+
+
+def parse_good_practice(data: dict[str, Any]) -> Optional[GoodPractice]:
+    """Parseia uma boa prática do JSON.
+
+    Args:
+        data: Dicionário com dados da boa prática
+
+    Returns:
+        GoodPractice parseado ou None se dados inválidos
+    """
+    try:
+        return GoodPractice(
+            file=str(data.get("file", "unknown")),
+            line=int(data.get("line", 0)),
+            description=str(data.get("description", "")),
+        )
+    except (ValueError, TypeError):
+        return None
 
 
 def parse_finding(data: dict[str, Any]) -> Optional[Finding]:
@@ -150,6 +208,7 @@ def parse_finding(data: dict[str, Any]) -> Optional[Finding]:
             description=str(data.get("description", "")),
             suggestion=str(data.get("suggestion", "")),
             code_snippet=str(data.get("code_snippet", "")),
+            confidence=normalize_confidence(data.get("confidence")),
         )
     except (ValueError, TypeError):
         return None
@@ -249,6 +308,7 @@ def _parse_json_response(
         ReviewResult com dados extraídos
     """
     findings: list[Finding] = []
+    good_practices: list[GoodPractice] = []
 
     # A resposta pode ter estrutura { "review": { ... } } ou direta
     review_data = data.get("review", data)
@@ -262,6 +322,15 @@ def _parse_json_response(
                 if finding:
                     findings.append(finding)
 
+    # Extrai boas práticas
+    good_practices_data = review_data.get("good_practices", [])
+    if isinstance(good_practices_data, list):
+        for item in good_practices_data:
+            if isinstance(item, dict):
+                good_practice = parse_good_practice(item)
+                if good_practice:
+                    good_practices.append(good_practice)
+
     # Calcula sumário
     critical = sum(1 for f in findings if f.severity == Severity.CRITICAL)
     warning = sum(1 for f in findings if f.severity == Severity.WARNING)
@@ -272,6 +341,7 @@ def _parse_json_response(
         base=base,
         files_analyzed=files_analyzed,
         findings=findings,
+        good_practices=good_practices,
         summary=ReviewSummary(
             total=len(findings),
             critical=critical,

@@ -13,6 +13,7 @@ from .diff_parser import get_current_branch, get_git_diff, parse_diff
 from .formatters.progress import ProgressReporter
 from .formatters.terminal import format_result
 from .i18n import get_available_languages, set_language, t
+from .models import ReviewSummary, Severity
 from .prompt_builder import build_prompt
 from .response_parser import parse_response
 from .runners import DEFAULT_RUNNER, RunnerNotFoundError, get_runner, list_runners
@@ -95,6 +96,13 @@ def main():
     default=False,
     help="Desabilita prompts interativos (modo CI)",
 )
+@click.option(
+    "--min-confidence",
+    "-c",
+    type=click.IntRange(1, 10),
+    default=7,
+    help="Exibe apenas findings com confidence >= N (default: 7). Use 1 para ver todos.",
+)
 def review(
     base: str,
     runner: str,
@@ -106,6 +114,7 @@ def review(
     text_quality: bool,
     description: str | None,
     no_interactive: bool,
+    min_confidence: int,
 ):
     """Analisa o diff da branch atual contra a branch base.
 
@@ -124,6 +133,10 @@ def review(
         airev review --base main -d "Corrige bug de autenticação"
 
         cat pr_description.md | airev review --base main -d -
+
+        airev review --base main --min-confidence 5
+
+        airev review --base main -c 1  # Ver todos os findings
     """
     workdir = workdir or Path.cwd()
     start_time = time.perf_counter()
@@ -250,6 +263,30 @@ def review(
             branch=current_branch,
             base=base,
             files_analyzed=len(diff_files),
+        )
+
+    # Filtra findings por confidence
+    if min_confidence > 1:
+        filtered_findings = [
+            f for f in result.findings if f.confidence >= min_confidence
+        ]
+
+        # Recalcula sumário com findings filtrados
+        critical = sum(1 for f in filtered_findings if f.severity == Severity.CRITICAL)
+        warning = sum(1 for f in filtered_findings if f.severity == Severity.WARNING)
+        info = sum(1 for f in filtered_findings if f.severity == Severity.INFO)
+
+        # Atualiza o resultado com findings filtrados
+        result = result.model_copy(
+            update={
+                "findings": filtered_findings,
+                "summary": ReviewSummary(
+                    total=len(filtered_findings),
+                    critical=critical,
+                    warning=warning,
+                    info=info,
+                ),
+            }
         )
 
     # Calcula tempo total

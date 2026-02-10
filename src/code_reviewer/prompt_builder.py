@@ -27,6 +27,14 @@ JSON_SCHEMA_EXAMPLE = {
                 "description": "Descrição detalhada do problema encontrado",
                 "suggestion": "Sugestão de como corrigir",
                 "code_snippet": "código problemático",
+                "confidence": 9,
+            }
+        ],
+        "good_practices": [
+            {
+                "file": "path/to/file.py",
+                "line": 15,
+                "description": "Excelente tratamento de exceções com logging adequado",
             }
         ],
         "summary": {"total": 1, "critical": 1, "warning": 0, "info": 0},
@@ -256,7 +264,9 @@ def build_prompt(
     language_name = LANGUAGE_NAMES.get(lang_code, lang_code)
 
     # Seção de text-quality (condicional)
-    text_quality_section = get_text_quality_section(language_name) if text_quality else ""
+    text_quality_section = (
+        get_text_quality_section(language_name) if text_quality else ""
+    )
 
     # Seção de descrição das alterações (condicional)
     description_section = get_description_section(description)
