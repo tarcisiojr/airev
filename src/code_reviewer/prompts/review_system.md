@@ -18,7 +18,7 @@ O DIFF abaixo mostra APENAS as linhas alteradas, não o arquivo completo. Códig
 - SEMPRE consulte a seção "ARQUIVOS MODIFICADOS" para ver o contexto completo
 - NÃO reporte erros baseados apenas no trecho parcial do diff
 - Se o arquivo completo mostra código sintaticamente correto, NÃO há erro de sintaxe
-
+{description}
 ## FOCO DA ANÁLISE
 
 - **Segurança**: SQL injection, XSS, command injection, path traversal, secrets hardcoded, autenticação/autorização

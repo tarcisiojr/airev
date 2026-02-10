@@ -27,3 +27,31 @@ class TestReviewCommand:
 
         assert result.exit_code == 0
         assert "-t" in result.output
+
+    def test_flag_description_reconhecida(self):
+        """Verifica que a flag --description é aceita pelo CLI."""
+        runner = CliRunner()
+
+        result = runner.invoke(review, ["--help"])
+
+        assert result.exit_code == 0
+        assert "--description" in result.output
+        assert "-d" in result.output
+
+    def test_flag_description_aceita_stdin(self):
+        """Verifica que a flag --description menciona stdin."""
+        runner = CliRunner()
+
+        result = runner.invoke(review, ["--help"])
+
+        assert result.exit_code == 0
+        assert "stdin" in result.output.lower()
+
+    def test_flag_no_interactive_reconhecida(self):
+        """Verifica que a flag --no-interactive é aceita pelo CLI."""
+        runner = CliRunner()
+
+        result = runner.invoke(review, ["--help"])
+
+        assert result.exit_code == 0
+        assert "--no-interactive" in result.output

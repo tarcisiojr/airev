@@ -6,6 +6,7 @@ from code_reviewer.prompt_builder import (
     format_context_for_prompt,
     format_diff_for_prompt,
     format_references_for_prompt,
+    get_description_section,
     get_prompt_template,
 )
 
@@ -255,3 +256,76 @@ class TestBuildPrompt:
         assert "snake_case" in prompt
         assert "camelCase" in prompt
         assert "termos técnicos" in prompt or "Termos técnicos" in prompt
+
+    def test_prompt_sem_descricao_por_padrao(self):
+        """Verifica que seção de descrição não aparece por padrão."""
+        diff_files = []
+        context_graphs = []
+
+        prompt = build_prompt(diff_files, context_graphs, "feature/test", "main")
+
+        assert "DESCRIÇÃO DAS ALTERAÇÕES" not in prompt
+
+    def test_prompt_com_descricao(self):
+        """Verifica que seção de descrição aparece quando fornecida."""
+        diff_files = []
+        context_graphs = []
+
+        prompt = build_prompt(
+            diff_files,
+            context_graphs,
+            "feature/test",
+            "main",
+            description="Implementa autenticação MFA",
+        )
+
+        assert "DESCRIÇÃO DAS ALTERAÇÕES" in prompt
+        assert "Implementa autenticação MFA" in prompt
+
+    def test_prompt_descricao_multilinhas(self):
+        """Verifica que descrição multi-linha é preservada."""
+        diff_files = []
+        context_graphs = []
+        description = """## O que muda
+
+- Adiciona MFA
+- Corrige bug de login
+
+## Como testar
+
+1. Faça login
+2. Verifique MFA"""
+
+        prompt = build_prompt(
+            diff_files,
+            context_graphs,
+            "feature/test",
+            "main",
+            description=description,
+        )
+
+        assert "## O que muda" in prompt
+        assert "- Adiciona MFA" in prompt
+        assert "## Como testar" in prompt
+
+
+class TestGetDescriptionSection:
+    """Testes para função get_description_section."""
+
+    def test_descricao_none_retorna_vazio(self):
+        """Verifica que descrição None retorna string vazia."""
+        result = get_description_section(None)
+        assert result == ""
+
+    def test_descricao_vazia_retorna_vazio(self):
+        """Verifica que descrição vazia retorna string vazia."""
+        result = get_description_section("")
+        assert result == ""
+
+    def test_descricao_formata_secao(self):
+        """Verifica que descrição é formatada corretamente."""
+        result = get_description_section("Corrige bug de login")
+
+        assert "DESCRIÇÃO DAS ALTERAÇÕES" in result
+        assert "Corrige bug de login" in result
+        assert "desenvolvedor" in result.lower()

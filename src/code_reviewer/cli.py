@@ -8,6 +8,7 @@ import click
 
 from . import __version__
 from .context_builder import build_context_graph
+from .description_input import get_description
 from .diff_parser import get_current_branch, get_git_diff, parse_diff
 from .formatters.progress import ProgressReporter
 from .formatters.terminal import format_result
@@ -82,6 +83,18 @@ def main():
     default=False,
     help="Ativa verificação de ortografia e clareza em mensagens de usuário",
 )
+@click.option(
+    "--description",
+    "-d",
+    default=None,
+    help="Descrição das alterações (contexto para o review). Use '-' para ler de stdin.",
+)
+@click.option(
+    "--no-interactive",
+    is_flag=True,
+    default=False,
+    help="Desabilita prompts interativos (modo CI)",
+)
 def review(
     base: str,
     runner: str,
@@ -91,6 +104,8 @@ def review(
     progress: bool,
     lang: str,
     text_quality: bool,
+    description: str | None,
+    no_interactive: bool,
 ):
     """Analisa o diff da branch atual contra a branch base.
 
@@ -105,6 +120,10 @@ def review(
         airev review --base main --no-progress
 
         airev review --base main --text-quality
+
+        airev review --base main -d "Corrige bug de autenticação"
+
+        cat pr_description.md | airev review --base main -d -
     """
     workdir = workdir or Path.cwd()
     start_time = time.perf_counter()
@@ -171,6 +190,14 @@ def review(
     reporter.show_diff_files(diff_files)
     reporter.show_diff_summary(diff_files)
 
+    # Obtém descrição das alterações (após mostrar diff para contexto)
+    change_description = get_description(
+        description_flag=description,
+        no_interactive=no_interactive,
+        json_output=json_output,
+        reporter=reporter,
+    )
+
     # Constrói contexto (backtracking)
     with reporter.status(t("cli.building_context")):
         context_graphs = build_context_graph(diff_files, workdir)
@@ -184,7 +211,12 @@ def review(
     # Monta o prompt
     with reporter.status(t("cli.building_prompt")):
         prompt = build_prompt(
-            diff_files, context_graphs, current_branch, base, text_quality=text_quality
+            diff_files,
+            context_graphs,
+            current_branch,
+            base,
+            text_quality=text_quality,
+            description=change_description,
         )
 
     # Obtém o runner

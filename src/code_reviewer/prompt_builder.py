@@ -152,6 +152,31 @@ def format_references_for_prompt(context_graphs: list[ContextGraph]) -> str:
     return "\n".join(parts)
 
 
+def get_description_section(description: str | None) -> str:
+    """Retorna a seção de descrição das alterações para o prompt.
+
+    Args:
+        description: Descrição fornecida pelo usuário ou None
+
+    Returns:
+        String formatada com a seção de descrição ou string vazia
+    """
+    if not description:
+        return ""
+
+    return f"""
+## DESCRIÇÃO DAS ALTERAÇÕES
+
+O desenvolvedor forneceu a seguinte descrição sobre as mudanças:
+
+{description}
+
+Use esta informação para contextualizar sua análise. A descrição indica a intenção
+do desenvolvedor e pode ajudar a identificar se o código implementa corretamente
+o que foi proposto.
+"""
+
+
 def get_text_quality_section(language_name: str) -> str:
     """Retorna a seção de instruções para verificação de qualidade de texto.
 
@@ -164,7 +189,8 @@ def get_text_quality_section(language_name: str) -> str:
     return f"""
 ## QUALIDADE DE TEXTO
 
-Verifique ortografia e clareza semântica em mensagens voltadas ao usuário, no idioma **{language_name}**.
+Verifique ortografia e clareza semântica em mensagens voltadas ao usuário,
+no idioma **{language_name}**.
 
 ### O que verificar:
 
@@ -200,6 +226,7 @@ def build_prompt(
     branch: str,
     base: str,
     text_quality: bool = False,
+    description: str | None = None,
 ) -> str:
     """Monta o prompt completo para a IA.
 
@@ -209,6 +236,7 @@ def build_prompt(
         branch: Nome da branch sendo analisada
         base: Nome da branch base
         text_quality: Se True, inclui verificação de ortografia e clareza
+        description: Descrição das alterações fornecida pelo usuário
 
     Returns:
         Prompt completo pronto para enviar à IA
@@ -230,6 +258,9 @@ def build_prompt(
     # Seção de text-quality (condicional)
     text_quality_section = get_text_quality_section(language_name) if text_quality else ""
 
+    # Seção de descrição das alterações (condicional)
+    description_section = get_description_section(description)
+
     # Substitui placeholders
     prompt = template.replace("{diff}", diff_section)
     prompt = prompt.replace("{context}", context_section)
@@ -237,5 +268,6 @@ def build_prompt(
     prompt = prompt.replace("{json_schema}", json_schema)
     prompt = prompt.replace("{language}", language_name)
     prompt = prompt.replace("{text_quality_section}", text_quality_section)
+    prompt = prompt.replace("{description}", description_section)
 
     return prompt
