@@ -2,6 +2,14 @@
 
 <!-- version list -->
 
+## v1.6.0 (2026-02-11)
+
+### Features
+
+- Enhance review quality and context understanding
+  ([`9c025a2`](https://github.com/tarcisiojr/airev/commit/9c025a2b0fb8330dd871abdddb38a6583e5c1482))
+
+
 ## v1.5.0 (2026-02-10)
 
 ### Chores
