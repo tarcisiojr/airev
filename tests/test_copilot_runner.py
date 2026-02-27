@@ -41,8 +41,8 @@ class TestCopilotCLIRunnerAvailability:
 class TestCopilotCLIRunnerExecution:
     """Testes para execução de prompts via Copilot CLI."""
 
-    def test_run_executa_com_yolo_e_silent(self, tmp_path):
-        """Deve executar copilot com flags --yolo e --silent."""
+    def test_run_executa_com_yolo_e_silent_via_stdin(self, tmp_path):
+        """Deve executar copilot com flags --yolo e --silent, passando prompt via stdin."""
         runner = CopilotCLIRunner()
 
         with patch.object(runner, "check_availability", return_value=True):
@@ -63,8 +63,11 @@ class TestCopilotCLIRunnerExecution:
                 assert cmd[0] == "copilot"
                 assert "--yolo" in cmd
                 assert "--silent" in cmd
-                assert "-p" in cmd
-                assert "prompt teste" in cmd
+
+                # Verifica que prompt é passado via stdin, não como argumento
+                assert "-p" not in cmd
+                assert "prompt teste" not in cmd
+                assert call_args[1]["input"] == "prompt teste"
 
                 # Verifica que passou o workdir
                 assert call_args[1]["cwd"] == tmp_path
@@ -102,6 +105,29 @@ class TestCopilotCLIRunnerExecution:
             msg = exc_info.value.args[0].lower()
             assert "copilot" in msg
             assert "npm" in msg or "brew" in msg
+
+    def test_run_prompt_grande_via_stdin(self, tmp_path):
+        """Prompt grande deve ser passado via stdin sem erro de ARG_MAX."""
+        runner = CopilotCLIRunner()
+        # Prompt de ~300KB, acima do limite ARG_MAX do macOS (~256KB)
+        prompt_grande = "x" * 300_000
+
+        with patch.object(runner, "check_availability", return_value=True):
+            with patch("subprocess.run") as mock_run:
+                mock_run.return_value = MagicMock(
+                    stdout="resposta ok",
+                    stderr="",
+                    returncode=0,
+                )
+
+                result = runner.run(prompt_grande, tmp_path)
+
+                # Verifica que prompt grande foi passado via stdin
+                call_args = mock_run.call_args
+                cmd = call_args[0][0]
+                assert prompt_grande not in cmd
+                assert call_args[1]["input"] == prompt_grande
+                assert result == "resposta ok"
 
     def test_name_retorna_copilot(self):
         """Propriedade name deve retornar 'copilot'."""

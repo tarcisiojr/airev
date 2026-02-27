@@ -10,7 +10,8 @@ class CopilotCLIRunner:
     """Runner que executa prompts via GitHub Copilot CLI standalone.
 
     Utiliza o comando `copilot` com flags `--yolo` (auto-aprova tools)
-    e `--silent` (output limpo para CI/CD).
+    e `--silent` (output limpo para CI/CD). O prompt é passado via stdin
+    para evitar o limite de ARG_MAX do SO em prompts grandes.
 
     Instalação:
     - Via npm: npm install -g @github/copilot-cli
@@ -58,8 +59,10 @@ class CopilotCLIRunner:
             )
 
         # Executa copilot com --yolo (auto-approve) e --silent (CI)
+        # Prompt passado via stdin para evitar limite de ARG_MAX do SO
         result = subprocess.run(
-            ["copilot", "--yolo", "--silent", "-p", prompt],
+            ["copilot", "--yolo", "--silent"],
+            input=prompt,
             capture_output=True,
             text=True,
             cwd=workdir,
