@@ -2,6 +2,27 @@
 
 <!-- version list -->
 
+## v1.11.0 (2026-07-15)
+
+### Bug Fixes
+
+- Falha do runner de IA não vira mais review vazio silencioso
+  ([`8eb6691`](https://github.com/tarcisiojr/airev/commit/8eb66915e18067a6571b2c03771749ce9f4f40fa))
+
+### Features
+
+- Análise estática multi-linguagem, contexto janelado e modo --thorough
+  ([`5c6f1d7`](https://github.com/tarcisiojr/airev/commit/5c6f1d7d48c13d6f8ed5ade1d82594bb6741d201))
+
+- Runner para Claude Code CLI
+  ([`8373fab`](https://github.com/tarcisiojr/airev/commit/8373fabe39b2df8c0fe00d389d73554b61f25607))
+
+### Testing
+
+- Suite de avaliação de recall com bugs conhecidos
+  ([`f4b2aff`](https://github.com/tarcisiojr/airev/commit/f4b2afffe96eef8d7d6e99995506aacc09692f7c))
+
+
 ## v1.10.3 (2026-03-04)
 
 ### Bug Fixes
