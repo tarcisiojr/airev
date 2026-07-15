@@ -16,9 +16,10 @@ from .formatters.progress import ProgressReporter
 from .formatters.terminal import format_result
 from .i18n import get_available_languages, set_language, t
 from .models import ReviewSummary, Severity
-from .prompt_builder import build_prompt
+from .prompt_builder import THOROUGH_PASSES, build_prompt
 from .response_parser import parse_response
 from .runners import DEFAULT_RUNNER, RunnerNotFoundError, get_runner, list_runners
+from .static_analysis import run_static_analysis
 from .updater import check_for_update, notify_update, run_upgrade
 
 
@@ -119,6 +120,13 @@ def main():
     default=False,
     help="Exibe grafo de dependências (callers/callees) das funções modificadas",
 )
+@click.option(
+    "--thorough",
+    "-T",
+    is_flag=True,
+    default=False,
+    help="Análise profunda: uma passada de IA por categoria (segurança, performance, bugs). Mais lento, maior cobertura.",
+)
 def review(
     base: str,
     runner: str,
@@ -133,6 +141,7 @@ def review(
     min_confidence: int,
     context_lines: int,
     show_deps: bool,
+    thorough: bool,
 ):
     """Analisa o diff da branch atual contra a branch base.
 
@@ -176,6 +185,7 @@ def review(
         "no_interactive": no_interactive,
         "min_confidence": min_confidence,
         "context_lines": context_lines,
+        "thorough": thorough,
         "version": __version__,
     })
 
@@ -251,6 +261,13 @@ def review(
         reporter=reporter,
     )
 
+    # Análise estática determinística (complementar à IA)
+    with reporter.status(t("cli.running_static_analysis")):
+        static_findings = run_static_analysis(diff_files, workdir)
+
+    if static_findings:
+        reporter.info(t("cli.static_findings_found", count=len(static_findings)))
+
     # Constrói contexto (backtracking)
     with reporter.status(t("cli.building_context")):
         context_graphs = build_context_graph(diff_files, workdir)
@@ -260,17 +277,6 @@ def review(
         reporter.step(t("cli.dependencies_found"))
         reporter.show_dependencies(context_graphs)
         reporter.print()
-
-    # Monta o prompt
-    with reporter.status(t("cli.building_prompt")):
-        prompt = build_prompt(
-            diff_files,
-            context_graphs,
-            current_branch,
-            base,
-            text_quality=text_quality,
-            description=change_description,
-        )
 
     # Obtém o runner
     try:
@@ -287,56 +293,130 @@ def review(
         reporter.print(t("cli.error_runner_help"))
         sys.exit(1)
 
-    # Executa a análise
-    with reporter.status(t("cli.running_analysis", runner=runner)):
-        try:
-            response = ai_runner.run(prompt, workdir)
-        except RunnerNotFoundError as e:
-            track_event("review_failed", {"error_type": "runner_not_found", "version": __version__})
-            reporter.error(t("cli.error_runner_not_found", error=e))
-            sys.exit(1)
-        except Exception as e:
-            track_event("review_failed", {"error_type": "runner_error", "version": __version__})
-            reporter.error(t("cli.error_execution", error=e))
-            sys.exit(1)
+    # Define as passadas: única (padrão) ou uma por categoria (--thorough)
+    passes: list[tuple[str, str] | None] = (
+        list(THOROUGH_PASSES) if thorough else [None]
+    )
 
-    # Parseia a resposta
-    with reporter.status(t("cli.processing_response")):
-        try:
-            result = parse_response(
-                response,
-                branch=current_branch,
-                base=base,
-                files_analyzed=len(diff_files),
+    result = None
+    merged_findings = []
+    merged_good_practices = []
+    seen_findings: set = set()
+    seen_practices: set = set()
+
+    for pass_number, analysis_pass in enumerate(passes, start=1):
+        pass_name, focus = analysis_pass if analysis_pass else (None, None)
+
+        # Monta o prompt (com foco de categoria no modo --thorough)
+        with reporter.status(t("cli.building_prompt")):
+            prompt = build_prompt(
+                diff_files,
+                context_graphs,
+                current_branch,
+                base,
+                text_quality=text_quality,
+                description=change_description,
+                focus=focus,
             )
-        except Exception as e:
-            track_event("review_failed", {"error_type": "parse_error", "version": __version__})
-            reporter.error(t("cli.error_execution", error=e))
-            sys.exit(1)
+
+        if pass_name:
+            status_message = t(
+                "cli.running_analysis_pass",
+                focus=pass_name,
+                runner=runner,
+                current=pass_number,
+                total=len(passes),
+            )
+        else:
+            status_message = t("cli.running_analysis", runner=runner)
+
+        # Executa a análise
+        with reporter.status(status_message):
+            try:
+                response = ai_runner.run(prompt, workdir)
+            except RunnerNotFoundError as e:
+                track_event("review_failed", {"error_type": "runner_not_found", "version": __version__})
+                reporter.error(t("cli.error_runner_not_found", error=e))
+                sys.exit(1)
+            except Exception as e:
+                track_event("review_failed", {"error_type": "runner_error", "version": __version__})
+                reporter.error(t("cli.error_execution", error=e))
+                sys.exit(1)
+
+        # Parseia a resposta
+        with reporter.status(t("cli.processing_response")):
+            try:
+                result = parse_response(
+                    response,
+                    branch=current_branch,
+                    base=base,
+                    files_analyzed=len(diff_files),
+                )
+            except Exception as e:
+                track_event("review_failed", {"error_type": "parse_error", "version": __version__})
+                reporter.error(t("cli.error_execution", error=e))
+                sys.exit(1)
+
+        # Acumula resultados das passadas (dedupe por arquivo+linha+categoria)
+        for finding in result.findings:
+            key = (finding.file, finding.line, finding.category)
+            if key not in seen_findings:
+                seen_findings.add(key)
+                merged_findings.append(finding)
+
+        for practice in result.good_practices:
+            key = (practice.file, practice.line)
+            if key not in seen_practices:
+                seen_practices.add(key)
+                merged_good_practices.append(practice)
+
+    # passes sempre tem ao menos 1 elemento, então result está definido
+    assert result is not None
+    result = result.model_copy(
+        update={
+            "findings": merged_findings,
+            "good_practices": merged_good_practices,
+        }
+    )
+
+    # Mescla findings da análise estática (dedupe por arquivo+linha+categoria)
+    if static_findings:
+        existing = {(f.file, f.line, f.category) for f in result.findings}
+        merged_findings = result.findings + [
+            f
+            for f in static_findings
+            if (f.file, f.line, f.category) not in existing
+        ]
+        result = result.model_copy(update={"findings": merged_findings})
 
     # Filtra findings por confidence
-    if min_confidence > 1:
-        filtered_findings = [
-            f for f in result.findings if f.confidence >= min_confidence
-        ]
+    filtered_findings = [
+        f for f in result.findings if f.confidence >= min_confidence
+    ]
 
-        # Recalcula sumário com findings filtrados
-        critical = sum(1 for f in filtered_findings if f.severity == Severity.CRITICAL)
-        warning = sum(1 for f in filtered_findings if f.severity == Severity.WARNING)
-        info = sum(1 for f in filtered_findings if f.severity == Severity.INFO)
+    # Contabiliza findings suprimidos para dar transparência ao usuário
+    suppressed = [f for f in result.findings if f.confidence < min_confidence]
+    suppressed_count = len(suppressed)
+    suppressed_min_confidence = (
+        min(f.confidence for f in suppressed) if suppressed else 1
+    )
 
-        # Atualiza o resultado com findings filtrados
-        result = result.model_copy(
-            update={
-                "findings": filtered_findings,
-                "summary": ReviewSummary(
-                    total=len(filtered_findings),
-                    critical=critical,
-                    warning=warning,
-                    info=info,
-                ),
-            }
-        )
+    # Recalcula sumário com findings filtrados (inclui os da análise estática)
+    critical = sum(1 for f in filtered_findings if f.severity == Severity.CRITICAL)
+    warning = sum(1 for f in filtered_findings if f.severity == Severity.WARNING)
+    info = sum(1 for f in filtered_findings if f.severity == Severity.INFO)
+
+    result = result.model_copy(
+        update={
+            "findings": filtered_findings,
+            "summary": ReviewSummary(
+                total=len(filtered_findings),
+                critical=critical,
+                warning=warning,
+                info=info,
+            ),
+        }
+    )
 
     # Calcula tempo total
     elapsed = time.perf_counter() - start_time
@@ -362,6 +442,18 @@ def review(
             show_deps=show_deps,
         )
         reporter.print()
+
+        # Transparência: informa quantos findings foram ocultados pelo filtro
+        if suppressed_count > 0:
+            reporter.warning(
+                t(
+                    "cli.findings_suppressed",
+                    count=suppressed_count,
+                    min_confidence=min_confidence,
+                    suggestion=suppressed_min_confidence,
+                )
+            )
+
         reporter.success(t("cli.analysis_complete", elapsed=elapsed))
 
 

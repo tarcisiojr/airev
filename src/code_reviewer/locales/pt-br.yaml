@@ -8,6 +8,7 @@ cli:
   building_context: "Construindo contexto..."
   building_prompt: "Montando prompt..."
   running_analysis: "Executando análise com {runner}..."
+  running_analysis_pass: "Executando análise focada em {focus} com {runner}... ({current}/{total})"
   processing_response: "Processando resposta..."
   analysis_complete: "Análise concluída em {elapsed:.1f}s"
 
@@ -27,6 +28,13 @@ cli:
 
   # Dependências
   dependencies_found: "Dependências encontradas:"
+
+  # Filtro de confiança
+  findings_suppressed: "{count} finding(s) ocultado(s) pelo filtro de confiança (< {min_confidence}). Use --min-confidence {suggestion} para vê-los."
+
+  # Análise estática
+  running_static_analysis: "Executando análise estática..."
+  static_findings_found: "{count} problema(s) encontrado(s) pela análise estática"
 
 progress:
   # Labels de resumo

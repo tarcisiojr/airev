@@ -194,6 +194,75 @@ class TestFormatContextForPrompt:
 
         assert "linhas omitidas" in result
 
+    def test_janela_centrada_no_hunk_em_arquivo_grande(self):
+        # Arquivo com 500 linhas e hunk modificado na linha 400 —
+        # o truncamento antigo (primeiras 200 linhas) esconderia a região
+        big_content = "\n".join([f"linha {i}" for i in range(1, 501)])
+
+        graph = ContextGraph(
+            function_name="funcao_final",
+            file="big.py",
+            callers=[],
+            callees=[],
+            file_content=big_content,
+        )
+
+        diff_file = DiffFile(
+            path="big.py",
+            hunks=[
+                DiffHunk(
+                    start_line_old=400,
+                    start_line_new=400,
+                    added_lines=[
+                        DiffLine(
+                            line_number=400, content="linha 400", is_addition=True
+                        )
+                    ],
+                )
+            ],
+        )
+
+        result = format_context_for_prompt([graph], [diff_file])
+
+        # A região do hunk (linha 400 ± janela) deve estar presente
+        assert "linha 400" in result
+        assert "linha 380" in result
+        # O cabeçalho do arquivo (imports/globals) também
+        assert "linha 1\n" in result
+        # O meio do arquivo, distante do hunk, deve ser omitido
+        assert "linha 200\n" not in result
+        assert "omitidas" in result
+
+    def test_arquivo_pequeno_vai_inteiro_mesmo_com_hunks(self):
+        content = "\n".join([f"linha {i}" for i in range(1, 51)])
+
+        graph = ContextGraph(
+            function_name="f",
+            file="small.py",
+            callers=[],
+            callees=[],
+            file_content=content,
+        )
+
+        diff_file = DiffFile(
+            path="small.py",
+            hunks=[
+                DiffHunk(
+                    start_line_old=10,
+                    start_line_new=10,
+                    added_lines=[
+                        DiffLine(line_number=10, content="linha 10", is_addition=True)
+                    ],
+                )
+            ],
+        )
+
+        result = format_context_for_prompt([graph], [diff_file])
+
+        assert "linha 1\n" in result
+        assert "linha 50" in result
+        assert "omitidas" not in result
+
 
 class TestFormatReferencesForPrompt:
     """Testes para função format_references_for_prompt."""
@@ -398,6 +467,39 @@ class TestBuildPrompt:
         assert "## O que muda" in prompt
         assert "- Adiciona MFA" in prompt
         assert "## Como testar" in prompt
+
+
+class TestGetFocusSection:
+    """Testes para a seção de foco do modo --thorough."""
+
+    def test_sem_foco_retorna_vazio(self):
+        from code_reviewer.prompt_builder import get_focus_section
+
+        assert get_focus_section(None) == ""
+
+    def test_com_foco_inclui_instrucao(self):
+        from code_reviewer.prompt_builder import get_focus_section
+
+        section = get_focus_section("Segurança: injeção e secrets")
+
+        assert "FOCO DESTA PASSADA" in section
+        assert "Segurança: injeção e secrets" in section
+
+    def test_build_prompt_substitui_placeholder_de_foco(self):
+        from code_reviewer.prompt_builder import build_prompt
+
+        prompt = build_prompt([], [], "feature/x", "main", focus="Performance")
+
+        assert "{focus_section}" not in prompt
+        assert "Performance" in prompt
+
+    def test_build_prompt_sem_foco_remove_placeholder(self):
+        from code_reviewer.prompt_builder import build_prompt
+
+        prompt = build_prompt([], [], "feature/x", "main")
+
+        assert "{focus_section}" not in prompt
+        assert "FOCO DESTA PASSADA" not in prompt
 
 
 class TestGetDescriptionSection:
