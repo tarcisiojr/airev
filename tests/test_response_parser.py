@@ -242,6 +242,28 @@ Espero que ajude!
 
         assert len(result.findings) == 0
 
+    def test_ignora_json_de_ruido_e_encontra_review(self):
+        # Saída de CLI com ruído de MCP antes do review real
+        response = (
+            'failed to start MCP server {"command":"npx"}\n'
+            'Aqui está o review: {"findings": [{"file": "a.py", "line": 1, '
+            '"severity": "CRITICAL", "category": "security", "title": "SQLi"}]}'
+        )
+
+        result = parse_response(response, "branch", "main", 1)
+
+        assert len(result.findings) == 1
+        assert result.findings[0].title == "SQLi"
+
+    def test_apenas_json_de_ruido_cai_no_fallback(self):
+        # Sem esta validação, o ruído viraria review vazio ("código aprovado")
+        response = 'failed to start MCP server {"command":"npx"}'
+
+        result = parse_response(response, "branch", "main", 1)
+
+        assert result.raw_response == response
+        assert result.findings[0].title == "Resposta não estruturada"
+
     def test_texto_sem_json_fallback(self):
         response = "Não encontrei nenhum problema no código."
 

@@ -4,7 +4,9 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
+from code_reviewer.runners.base import RunnerExecutionError
 from code_reviewer.runners.copilot import CopilotCLIRunner
+from code_reviewer.runners.gemini import GeminiCLIRunner
 
 
 class TestCopilotCLIRunnerAvailability:
@@ -36,6 +38,38 @@ class TestCopilotCLIRunnerAvailability:
             result = runner.check_availability()
 
             assert result is False
+
+
+class TestRunnerExitCode:
+    """Falha do CLI deve virar exceção, nunca resposta vazia da IA."""
+
+    def test_copilot_com_exit_code_diferente_de_zero_levanta_erro(self, tmp_path):
+        runner = CopilotCLIRunner()
+
+        with patch.object(runner, "check_availability", return_value=True):
+            with patch("subprocess.run") as mock_run:
+                mock_run.return_value = MagicMock(
+                    stdout="",
+                    stderr="erro de autenticação",
+                    returncode=1,
+                )
+
+                with pytest.raises(RunnerExecutionError, match="exit code 1"):
+                    runner.run("prompt", tmp_path)
+
+    def test_gemini_com_exit_code_diferente_de_zero_levanta_erro(self, tmp_path):
+        runner = GeminiCLIRunner()
+
+        with patch.object(runner, "check_availability", return_value=True):
+            with patch("subprocess.run") as mock_run:
+                mock_run.return_value = MagicMock(
+                    stdout="",
+                    stderr="GOOGLE_CLOUD_PROJECT não configurado",
+                    returncode=1,
+                )
+
+                with pytest.raises(RunnerExecutionError, match="GOOGLE_CLOUD_PROJECT"):
+                    runner.run("prompt", tmp_path)
 
 
 class TestCopilotCLIRunnerExecution:
@@ -74,22 +108,22 @@ class TestCopilotCLIRunnerExecution:
 
                 assert result == "resposta do copilot"
 
-    def test_run_inclui_stderr_em_caso_de_erro(self, tmp_path):
-        """Deve incluir stderr no output quando contém erro."""
+    def test_run_inclui_stderr_com_erro_em_execucao_bem_sucedida(self, tmp_path):
+        """Com exit code 0, stderr contendo 'error' deve ser incluído no output."""
         runner = CopilotCLIRunner()
 
         with patch.object(runner, "check_availability", return_value=True):
             with patch("subprocess.run") as mock_run:
                 mock_run.return_value = MagicMock(
                     stdout="output parcial",
-                    stderr="Error: algo deu errado",
-                    returncode=1,
+                    stderr="Error: aviso recuperável",
+                    returncode=0,
                 )
 
                 result = runner.run("prompt", tmp_path)
 
                 assert "output parcial" in result
-                assert "Error: algo deu errado" in result
+                assert "Error: aviso recuperável" in result
 
     def test_run_lanca_erro_quando_indisponivel(self, tmp_path):
         """Quando Copilot indisponível, deve lançar RunnerNotFoundError."""

@@ -3,7 +3,7 @@
 import subprocess
 from pathlib import Path
 
-from .base import RunnerNotFoundError, check_command_exists
+from .base import RunnerExecutionError, RunnerNotFoundError, check_command_exists
 
 
 class GeminiCLIRunner:
@@ -60,6 +60,15 @@ class GeminiCLIRunner:
             cwd=workdir,
             timeout=300,  # 5 minutos de timeout
         )
+
+        # Falha do CLI não pode virar "resposta da IA" — sem esta checagem,
+        # erros de autenticação/configuração viram um review vazio silencioso
+        if result.returncode != 0:
+            error_output = (result.stderr or result.stdout or "").strip()
+            raise RunnerExecutionError(
+                f"gemini CLI falhou (exit code {result.returncode}): "
+                f"{error_output[-500:]}"
+            )
 
         # Combina stdout e stderr (Gemini pode usar ambos)
         output = result.stdout

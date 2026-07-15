@@ -31,20 +31,16 @@ def extract_json_from_markdown(text: str) -> Optional[str]:
     return None
 
 
-def extract_json_by_braces(text: str) -> Optional[str]:
-    """Tenta extrair JSON encontrando { ... } balanceado.
+def _extract_balanced_braces(text: str, start: int) -> Optional[str]:
+    """Extrai um bloco { ... } balanceado a partir de uma posição.
 
     Args:
         text: Texto que pode conter JSON
+        start: Índice do caractere '{' inicial
 
     Returns:
-        Conteúdo JSON extraído ou None se não encontrado
+        Bloco balanceado ou None se não fechar
     """
-    # Encontra a primeira { e tenta balancear
-    start = text.find("{")
-    if start == -1:
-        return None
-
     depth = 0
     in_string = False
     escape = False
@@ -73,6 +69,72 @@ def extract_json_by_braces(text: str) -> Optional[str]:
                 return text[start : i + 1]
 
     return None
+
+
+def extract_json_by_braces(text: str) -> Optional[str]:
+    """Tenta extrair JSON encontrando { ... } balanceado.
+
+    Args:
+        text: Texto que pode conter JSON
+
+    Returns:
+        Conteúdo JSON extraído ou None se não encontrado
+    """
+    start = text.find("{")
+    if start == -1:
+        return None
+    return _extract_balanced_braces(text, start)
+
+
+def iter_json_by_braces(text: str, max_candidates: int = 50):
+    """Itera sobre todos os blocos { ... } balanceados do texto.
+
+    A resposta da IA pode conter vários objetos JSON (ruído de logs,
+    exemplos, o review em si) — este iterador permite procurar o que
+    tem estrutura de review, em vez de aceitar cegamente o primeiro.
+
+    Args:
+        text: Texto que pode conter JSON
+        max_candidates: Limite de candidatos para evitar varredura excessiva
+
+    Yields:
+        Blocos balanceados encontrados
+    """
+    position = 0
+    for _ in range(max_candidates):
+        start = text.find("{", position)
+        if start == -1:
+            return
+
+        candidate = _extract_balanced_braces(text, start)
+        if candidate:
+            yield candidate
+
+        # Avança apenas um caractere para também visitar objetos aninhados
+        position = start + 1
+
+
+def _looks_like_review(data: object) -> bool:
+    """Verifica se o JSON parseado tem estrutura de review.
+
+    Sem esta validação, qualquer objeto JSON presente na saída (ex: ruído
+    de logs de ferramentas) seria aceito como review válido com zero
+    findings — um falso "código aprovado".
+
+    Args:
+        data: Dados parseados do JSON
+
+    Returns:
+        True se contém as chaves esperadas de um review
+    """
+    if not isinstance(data, dict):
+        return False
+
+    review_data = data.get("review", data)
+    if not isinstance(review_data, dict):
+        return False
+
+    return "findings" in review_data
 
 
 def normalize_severity(value: str) -> Severity:
@@ -237,12 +299,13 @@ def parse_response(
     Returns:
         ReviewResult com os findings parseados
     """
-    json_str = None
     data = None
 
     # Estratégia 1: JSON direto
     try:
-        data = json.loads(response)
+        candidate = json.loads(response)
+        if _looks_like_review(candidate):
+            data = candidate
     except json.JSONDecodeError:
         pass
 
@@ -251,20 +314,26 @@ def parse_response(
         json_str = extract_json_from_markdown(response)
         if json_str:
             try:
-                data = json.loads(json_str)
+                candidate = json.loads(json_str)
+                if _looks_like_review(candidate):
+                    data = candidate
             except json.JSONDecodeError:
                 pass
 
-    # Estratégia 3: JSON por balanceamento de chaves
+    # Estratégia 3: JSON por balanceamento de chaves.
+    # Percorre TODOS os candidatos procurando estrutura de review —
+    # o primeiro objeto do texto pode ser ruído (logs de ferramentas)
     if data is None:
-        json_str = extract_json_by_braces(response)
-        if json_str:
+        for json_str in iter_json_by_braces(response):
             try:
-                data = json.loads(json_str)
+                candidate = json.loads(json_str)
             except json.JSONDecodeError:
-                pass
+                continue
+            if _looks_like_review(candidate):
+                data = candidate
+                break
 
-    # Se encontrou JSON, processa
+    # Se encontrou JSON com estrutura de review, processa
     if data is not None:
         return _parse_json_response(data, branch, base, files_analyzed)
 

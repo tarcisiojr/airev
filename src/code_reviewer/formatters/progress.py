@@ -57,6 +57,9 @@ class ProgressReporter:
                            Se None, auto-detecta.
         """
         self.console = console or Console(force_terminal=force_terminal)
+        # Console dedicado para erros: escreve em stderr para não
+        # corromper saídas parseáveis (ex: --json-output)
+        self._error_console = Console(stderr=True, force_terminal=force_terminal)
         self.enabled = enabled
 
         # Determina se deve usar animações
@@ -139,13 +142,14 @@ class ProgressReporter:
     def error(self, message: str) -> None:
         """Exibe uma mensagem de erro.
 
+        Erros são SEMPRE exibidos (mesmo com o reporter desabilitado, como
+        no modo --json-output) e vão para stderr — uma falha silenciosa
+        faria um review que nem executou parecer "código aprovado".
+
         Args:
             message: Mensagem a exibir
         """
-        if not self.enabled:
-            return
-
-        self.console.print(f"[red]✗[/red] {message}")
+        self._error_console.print(f"[red]✗[/red] {message}")
 
     def print(self, message: str = "") -> None:
         """Imprime uma mensagem simples.

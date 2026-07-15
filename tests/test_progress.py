@@ -233,27 +233,33 @@ class TestProgressReporterWarning:
 class TestProgressReporterError:
     """Testes para método error() do ProgressReporter."""
 
-    def test_error_exibe_mensagem(self):
-        """error() deve exibir mensagem de erro."""
-        output = io.StringIO()
-        console = Console(file=output, force_terminal=False)
-        reporter = ProgressReporter(console=console)
+    def test_error_exibe_mensagem_em_stderr(self, capsys):
+        """error() deve exibir mensagem de erro em stderr."""
+        reporter = ProgressReporter(force_terminal=False)
 
         reporter.error("Falhou")
 
-        result = output.getvalue()
-        assert "Falhou" in result
-        assert "✗" in result
+        captured = capsys.readouterr()
+        assert "Falhou" in captured.err
+        assert "✗" in captured.err
 
-    def test_error_nao_faz_nada_quando_disabled(self):
-        """Quando disabled, error() não deve fazer nada."""
+    def test_error_exibido_mesmo_quando_disabled(self, capsys):
+        """Erros aparecem mesmo com reporter desabilitado (--json-output).
+
+        Uma falha silenciosa faria um review que nem executou parecer
+        'código aprovado'.
+        """
         output = io.StringIO()
         console = Console(file=output, force_terminal=False)
         reporter = ProgressReporter(console=console, enabled=False)
 
         reporter.error("Falhou")
 
+        # Nada no console padrão (stdout permanece parseável)...
         assert output.getvalue() == ""
+        # ...mas o erro aparece em stderr
+        captured = capsys.readouterr()
+        assert "Falhou" in captured.err
 
 
 class TestProgressReporterPrint:

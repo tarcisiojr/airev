@@ -11,6 +11,17 @@ class RunnerNotFoundError(Exception):
     pass
 
 
+class RunnerExecutionError(Exception):
+    """Exceção quando o CLI do runner falha na execução.
+
+    Sem esta checagem, a saída de erro do CLI (ruído de MCP, falhas de
+    autenticação) seria tratada como resposta da IA — resultando em um
+    review vazio que parece "código aprovado".
+    """
+
+    pass
+
+
 @runtime_checkable
 class AIRunner(Protocol):
     """Interface Protocol para runners de IA.
