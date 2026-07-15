@@ -2,6 +2,14 @@
 
 <!-- version list -->
 
+## v1.11.1 (2026-07-15)
+
+### Bug Fixes
+
+- Corrige pacote npm do Gemini CLI na documentação
+  ([`7c02603`](https://github.com/tarcisiojr/airev/commit/7c0260312bc98dc4e58981b04c31a50ccf87517f))
+
+
 ## v1.11.0 (2026-07-15)
 
 ### Bug Fixes
