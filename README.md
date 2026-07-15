@@ -119,7 +119,7 @@ airev runners
 Instale o Gemini CLI:
 
 ```bash
-npm install -g @anthropic/gemini-cli
+npm install -g @google/gemini-cli
 # ou
 brew install gemini-cli
 ```
