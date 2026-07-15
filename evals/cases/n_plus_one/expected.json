@@ -1,0 +1,11 @@
+{
+  "description": "Query executada dentro de loop (padrão N+1)",
+  "expected_findings": [
+    {
+      "file": "relatorio.py",
+      "category": "performance",
+      "line_range": [12, 21],
+      "reason": "Uma query por cliente dentro do loop; um único GROUP BY resolve"
+    }
+  ]
+}

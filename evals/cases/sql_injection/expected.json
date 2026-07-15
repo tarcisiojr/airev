@@ -1,0 +1,11 @@
+{
+  "description": "Query SQL montada com f-string usando entrada do usuário",
+  "expected_findings": [
+    {
+      "file": "repo.py",
+      "category": "security",
+      "line_range": [12, 16],
+      "reason": "Parâmetro 'nome' interpolado diretamente na query permite SQL injection"
+    }
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "description": "Comando shell montado com entrada do usuário e shell=True",
+  "expected_findings": [
+    {
+      "file": "backup.py",
+      "category": "security",
+      "line_range": [12, 18],
+      "reason": "Parâmetros interpolados em comando com shell=True permitem command injection"
+    }
+  ]
+}

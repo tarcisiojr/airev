@@ -1,0 +1,11 @@
+{
+  "description": "Typo em nome de variável (percentul) e variável definida apenas em um ramo do if",
+  "expected_findings": [
+    {
+      "file": "app.py",
+      "category": "bug",
+      "line_range": [9, 13],
+      "reason": "Uso de 'percentul' (typo de 'percentual') causa NameError; 'percentual' só existe se cupom == PROMO10"
+    }
+  ]
+}

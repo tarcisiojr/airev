@@ -1,0 +1,11 @@
+{
+  "description": "Arquivo aberto sem fechamento (sem with/close)",
+  "expected_findings": [
+    {
+      "file": "leitor.py",
+      "category": "resource-leak",
+      "line_range": [12, 16],
+      "reason": "open() sem with nem close() vaza o file descriptor"
+    }
+  ]
+}
