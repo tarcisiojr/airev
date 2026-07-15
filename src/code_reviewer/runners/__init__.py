@@ -3,6 +3,7 @@
 from typing import Type
 
 from .base import AIRunner, RunnerNotFoundError
+from .claude import ClaudeCLIRunner
 from .copilot import CopilotCLIRunner
 from .gemini import GeminiCLIRunner
 
@@ -10,6 +11,7 @@ from .gemini import GeminiCLIRunner
 RUNNERS: dict[str, Type[AIRunner]] = {
     "gemini": GeminiCLIRunner,
     "copilot": CopilotCLIRunner,
+    "claude": ClaudeCLIRunner,
 }
 
 # Runner padrão
@@ -49,6 +51,7 @@ __all__ = [
     "RunnerNotFoundError",
     "GeminiCLIRunner",
     "CopilotCLIRunner",
+    "ClaudeCLIRunner",
     "get_runner",
     "list_runners",
     "DEFAULT_RUNNER",

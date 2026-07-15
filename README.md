@@ -6,7 +6,9 @@ CLI para revisão de código automatizada com IA. Analisa diffs de branches Git 
 
 - **Análise de diff inteligente**: Compara sua branch com a branch base e analisa apenas o código modificado
 - **Context backtracking**: Identifica automaticamente funções que chamam ou são chamadas pelo código modificado
-- **Múltiplos runners de IA**: Suporte a Gemini CLI e GitHub Copilot CLI
+- **Análise estática determinística**: Complementa a IA com linters locais (ruff/pyflakes para Python, tsc/eslint para JS/TS, go build para Go) — variáveis não declaradas e erros de compilação são detectados com 100% de confiança
+- **Modo thorough**: Uma passada de IA dedicada por categoria (segurança, performance, bugs) para máxima cobertura
+- **Múltiplos runners de IA**: Suporte a Gemini CLI, GitHub Copilot CLI e Claude Code CLI
 - **Output estruturado**: Resultados em terminal colorido ou JSON para integração com CI/CD
 - **Internacionalização**: Suporte a português (pt-br) e inglês (en)
 - **Categorização de findings**: Severidade (CRITICAL, WARNING, INFO) e categoria (security, performance, bug, resource-leak)
@@ -20,6 +22,7 @@ CLI para revisão de código automatizada com IA. Analisa diffs de branches Git 
 - Um CLI de IA instalado:
   - [Gemini CLI](https://github.com/google-gemini/gemini-cli) (padrão)
   - [GitHub Copilot CLI](https://github.com/github/copilot-cli)
+  - [Claude Code CLI](https://docs.claude.com/en/docs/claude-code)
 
 ### Via pipx (Recomendado)
 
@@ -94,12 +97,14 @@ airev review --base main --lang en
 | Opção | Descrição |
 |-------|-----------|
 | `--base`, `-b` | Branch base para comparação (obrigatório) |
-| `--runner`, `-r` | Runner de IA: `gemini` (padrão) ou `copilot` |
+| `--runner`, `-r` | Runner de IA: `gemini` (padrão), `copilot` ou `claude` |
 | `--json-output`, `-j` | Retorna resultado em JSON |
 | `--workdir`, `-w` | Diretório do repositório (padrão: atual) |
 | `--no-progress` | Desabilita animações (modo CI) |
 | `--progress` | Força animações mesmo em CI |
 | `--lang`, `-l` | Idioma: `pt-br` (padrão) ou `en` |
+| `--min-confidence`, `-c` | Exibe apenas findings com confidence >= N (padrão: 7). O CLI informa quantos findings foram ocultados pelo filtro |
+| `--thorough`, `-T` | Análise profunda: uma passada de IA por categoria. Mais lento, maior cobertura |
 
 ### Listar runners disponíveis
 
@@ -129,6 +134,20 @@ npm install -g @github/copilot-cli
 brew install github/gh/copilot-cli
 # ou
 winget install GitHub.CopilotCLI
+```
+
+### Claude Code CLI
+
+Instale o Claude Code:
+
+```bash
+npm install -g @anthropic-ai/claude-code
+```
+
+Use com:
+
+```bash
+airev review --base main --runner claude
 ```
 
 ## Output
@@ -254,6 +273,7 @@ src/code_reviewer/
 ├── diff_parser.py      # Parser de git diff
 ├── context_builder.py  # Backtracking de dependências
 ├── prompt_builder.py   # Construção do prompt para IA
+├── static_analysis.py  # Camada determinística (ruff, tsc, eslint, go build)
 ├── response_parser.py  # Parser da resposta da IA
 ├── models.py           # Modelos Pydantic
 ├── formatters/
